@@ -15,13 +15,13 @@
 
             // Global variables that are available in all functions.
             // Note: You can add your own here, e.g. to store the rendering mode.
-            var camera, scene, renderer, geometry, material, cube;
+            var camera, scene, renderer, geometry, material, cube, axes, minusaxes;
             var cubeSize = 1;
             var cubeShape = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
 
             // Initialise the scene, and draw it for the first time.
             init();
-			      animate();
+	    animate();
 
             // Listen for keyboard events, to react to them.
             // Note: there are also other event listeners, e.g. for mouse events.
@@ -45,6 +45,11 @@
                 material = new THREE.MeshBasicMaterial({ color: 0xffffff });
                 cube = new THREE.Mesh(geometry, material);
                 scene.add(cube);
+		
+		axes = new THREE.AxesHelper(5);
+                minusaxes = new THREE.AxesHelper(-5);
+                scene.add(axes);
+                scene.add(minusaxes);
                 
                 // Basic ambient lighting.
                 scene.add(new THREE.AmbientLight(0xffffff));
