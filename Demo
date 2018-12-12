@@ -43,6 +43,12 @@
                 cube = new THREE.Mesh(geometry, material);
                 scene.add(cube);
                 
+		axes = new THREE.AxesHelper(5);
+                minusaxes = new THREE.AxesHelper(-5);
+                scene.add(axes);
+                scene.add(minusaxes);
+
+		
                 // Basic ambient lighting.
                 scene.add(new THREE.AmbientLight(0xffffff));
                 // TO DO: add more complex lighting for 'face' rendering mode (requirement 4).
