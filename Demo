@@ -14,7 +14,7 @@
             "use strict"; // https://stackoverflow.com/q/1335851/72470
 
             // Global variables that are available in all functions.
-            var camera, scene, renderer, geometry, material, cube;
+            var camera, scene, renderer, geometry, material, cube, axes, minusaxes;
 
             // Initialise the scene, and draw it for the first time.
             init();
