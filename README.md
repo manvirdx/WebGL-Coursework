@@ -10,11 +10,11 @@ f - Faces rendering mode
 e - Edges rendering mode
 v - Vertices rendering mode
             
-Visiblity controls
+Visiblity controls:
 c - Toggle cube visiblity
 b - Toggle bunny visiblity
 		
-Lighting controls
+Lighting controls:
 1 - Toggle light 1
 2 - Toggle light 2
 3 - Toggle light 3
@@ -22,7 +22,7 @@ Lighting controls
 5 - Toggle all lights
 6 - Turn off lights					
 
-Camera translation controls
+Camera translation controls:
 up arrow - Up
 down arrow - Down
 left arrow - Left
@@ -30,7 +30,7 @@ right arrow - Right
 enter - Zoom in
 backspace - Zoom out
 
-Camera orbit controls
+Camera orbit controls:
 w - Orbit up
 s - Orbit down
 d - Orbit left
