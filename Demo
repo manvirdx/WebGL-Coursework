@@ -28,7 +28,7 @@
             //Speeds for camera translation, camera orbit and cube rotation respectively
             var translateDelta = 0.15;
             var orbitDelta = 0.1;
-            var rotationDelta = 0.015;
+            var rotationDelta = 0.0005;
             
             //Object loader and boolean to toggle visibility of bunny
             var loader;
@@ -38,7 +38,7 @@
             var defaultBunny, edgeBunny, vertexBunny, faceBunny;
 
             //Flags are the rotation settings for the cube axes (1 = rotating, 0 = stopped)
-            var xflag = 1, yflag = 1, zflag = 1;
+            var xflag = 0, yflag = 0, zflag = 0;
             //These are for the animation frames
             var xRotationID,yRotationID,zRotationID;
 
@@ -141,13 +141,14 @@
 			}
 
             // Animation loop function. This function is called whenever an update is required.
-            function animate() {
-                id = requestAnimationFrame(animate);
-                rotateX();
-                rotateY();
-                rotateZ();
-                cancelAnimationFrame(id);
+             function animate() {
+                 id = requestAnimationFrame(animate);
+                 rotateX();
+                 rotateY();
+                 rotateZ();
+                 //cancelAnimationFrame(id);
                 }
+
 
             //Checks rotation for x using flag
             function rotateX() {
@@ -450,11 +451,11 @@
                     case 90: //z = toggle rotation on z-axis
                         if (zflag == 0) {
                             zflag = 1;
-                            animate();
+                            rotateZ();
                         }
                         else if(zflag == 1) {
                             zflag = 0;
-                            animate();
+                            rotateZ();
                         }
                         break;
 
