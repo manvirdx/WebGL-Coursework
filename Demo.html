@@ -1,0 +1,509 @@
+﻿<html>
+	<head>
+		<title>CM20219 – Coursework 2 – WebGL</title>
+        <meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body { margin: 0; overflow: hidden; }
+			canvas { width: 100%; height: 100%; }
+		</style>
+	</head>
+	<body>
+        <script src="three.js"></script>
+        <script src="OBJLoader.js"></script>
+		<script>
+            "use strict"; // https://stackoverflow.com/q/1335851/72470
+
+            // Global variables that are available in all functions.
+            // Note: You can add your own here, e.g. to store the rendering mode.
+            var camera, scene, renderer, mesh, axes, minusaxes, id;
+            var geometry, material, cube;
+            var cubeModes;
+            var cubeSize = 1;
+            var cubeShape = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+            var isCubeVisible = true;
+            //Variables for camera points
+            var orbitX, orbitY;
+
+            //Speeds for camera translation, camera orbit and cube rotation respectively
+            var translateDelta = 0.15;
+            var orbitDelta = 0.1;
+            var rotationDelta = 0.0005;
+            
+            //Object loader and boolean to toggle visibility of bunny
+            var loader;
+            var bunny;
+            var isBunnyVisible = false;
+            var bunnyMaterial;
+            var defaultBunny, edgeBunny, vertexBunny, faceBunny;
+
+            //Flags are the rotation settings for the cube axes (1 = rotating, 0 = stopped)
+            var xflag = 0, yflag = 0, zflag = 0;
+            //These are for the animation frames
+            var xRotationID,yRotationID,zRotationID;
+
+            var floorGeometry, floorMaterial, floorMesh;
+            var lightFlag = 0;
+            var light;
+            var light1, light2, light3, light4;
+            
+            // Initialise the scene, and draw it for the first time.
+            init();
+            animate();
+
+            // Listen for keyboard events, to react to them.
+            // Note: there are also other event listeners, e.g. for mouse events.
+            document.addEventListener('keydown', handleKeyDown);
+
+            // Scene initialisation. This function is only run once, at the very beginning.
+            function init()
+            {
+                scene = new THREE.Scene();
+
+                // Set up the camera, move it to (3, 4, 5) and look at the origin (0, 0, 0).
+                camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+                //Allows camera to orbit in latitude directions (up and down)
+                //These are the x and y points of the camera which stay constant during rotation
+				orbitX = new THREE.Object3D();
+				orbitY = new THREE.Object3D();
+                orbitX.add(orbitY);
+				orbitY.add(camera);
+				scene.add(orbitX);
+                camera.lookAt(new THREE.Vector3(0, 0, 0));
+                camera.translateZ(7);
+
+                // Draw a helper grid in the x-z plane (note: y is up).
+                scene.add(new THREE.GridHelper(10, 20, 0xffffff));
+
+                //Creation of ground plane
+                floorGeometry = new THREE.PlaneGeometry(10, 10);
+                floorMaterial = new THREE.MeshStandardMaterial({color: 0x8c8c8c, side: THREE.DoubleSide});
+                floorMesh = new THREE.Mesh(floorGeometry, floorMaterial);
+                floorMesh.receiveShadow = true;
+                floorMesh.rotation.x = 0.5 * Math.PI;
+                floorMesh.position.y = -(cubeSize);
+
+                //Creation of cube
+                geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+                material = new THREE.MeshPhongMaterial({ color: 0x0099ff });
+                cube = new THREE.Mesh(geometry, material);
+                cube.castShadow = true;
+				cube.receiveShadow = false;
+                scene.add(cube);
+                // TO DO: Visualise the axes of the global coordinate system (requirement 2).
+                                
+                axes = new THREE.AxesHelper(5);
+                minusaxes = new THREE.AxesHelper(-5);
+                scene.add(axes);
+                scene.add(minusaxes);
+                scene.add(floorMesh);
+
+                // Basic ambient lighting.
+                scene.add(new THREE.AmbientLight(0xffffff));
+
+                loader = new THREE.OBJLoader();
+                loader.load(
+                    'bunny-5000.obj',
+                    function (object) {
+                        object.traverse(function(child) {
+                            if(child.material instanceof THREE.MeshPhongMaterial) {
+                                bunny = child;
+                            bunny.geometry.computeBoundingBox();
+                            var xDifference = bunny.geometry.boundingBox.max.x - bunny.geometry.boundingBox.min.x;
+                            var yDifference = bunny.geometry.boundingBox.max.y - bunny.geometry.boundingBox.min.y;
+                            var zDifference = bunny.geometry.boundingBox.max.z - bunny.geometry.boundingBox.min.z;
+                            var scale = cubeSize / Math.max(xDifference, yDifference, zDifference);
+                            bunny.scale.set(scale, scale, scale);
+                            bunny.position.set((-cubeSize / 4), 0, 0);
+                            defaultBunny = bunny.geometry;
+                            cube.add(bunny);
+                            }
+                        });
+                    }); 
+
+                // Set up the Web GL renderer.
+                renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
+				renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                document.body.appendChild(renderer.domElement);
+
+                // Handle resizing of the browser window.
+				window.addEventListener('resize', handleResize, false);
+            }
+
+            // Handle resizing of the browser window.
+            function handleResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+				renderer.setSize(window.innerWidth, window.innerHeight);
+			}
+
+            // Animation loop function. This function is called whenever an update is required.
+             function animate() {
+                 id = requestAnimationFrame(animate);
+                 rotateX();
+                 rotateY();
+                 rotateZ();
+                 //cancelAnimationFrame(id);
+                }
+
+
+            //Checks rotation for x using flag
+            function rotateX() {
+                    xRotationID = requestAnimationFrame(rotateX);
+                    if(xflag == 1) {
+                    cube.rotation.x += rotationDelta;
+                    }
+                    else {
+                        stopRotation(xRotationID);
+                    }
+                    renderer.render(scene, camera);
+            }
+
+            //Checks rotation for y using flag
+            function rotateY() {
+                    yRotationID = requestAnimationFrame(rotateY);
+                    if(yflag == 1) {
+                    cube.rotation.y += rotationDelta;
+                    }
+                    else {
+                        stopRotation(yRotationID);
+                    }
+                    renderer.render(scene, camera);
+
+            }
+
+            //Checks rotation for z using flag
+            function rotateZ() {
+                    zRotationID = requestAnimationFrame(rotateZ);
+                    if(zflag == 1) {
+                    cube.rotation.z += rotationDelta;
+                    }
+                    else {
+                        stopRotation(zRotationID);
+                    }
+                    renderer.render(scene, camera);
+            }
+
+            function stopRotation(id) {
+                cancelAnimationFrame(id);
+            }
+
+            //Set up lighting with different colour settings
+            //Available choice for one light of the specified colour or all four lights with all colours
+            function addLighting() {
+                if(lightFlag == 0) {
+                    removeLighting();
+                    light = new THREE.PointLight(0x80d4ff);
+                    light.position.set(4, 2, 4);
+                    light.castShadow = true;
+                    scene.add(light);
+                }
+                else if(lightFlag == 1) {
+                    removeLighting();
+                    light = new THREE.PointLight(0xff66cc);
+                    light.position.set(-4, 2 , -4);
+                    light.castShadow = true;
+                    scene.add(light);
+                }
+                else if(lightFlag == 2) {
+                    removeLighting();
+                    light = new THREE.PointLight(0x66ff33);
+                    light.position.set(-4, 2, 4);
+                    light.castShadow = true;
+                    scene.add(light);
+                }
+                else if(lightFlag == 3) {
+                    removeLighting();
+                    light = new THREE.PointLight(0xffb900);
+                    light.position.set(4, 2, -4);
+                    light.castShadow = true;
+                    scene.add(light);
+                }
+
+                else if (lightFlag == 4) {
+                    removeLighting();
+                    light1 = new THREE.PointLight(0x80d4ff);
+                    light1.position.set(4, 2, 4);
+                    light1.castShadow = true;
+                    scene.add(light1);
+
+                    light2 = new THREE.PointLight(0xff66cc);
+                    light2.position.set(-4, 2, -4);
+                    light2.castShadow = true;
+                    scene.add(light2);
+
+                    light3 = new THREE.PointLight(0x66ff33);
+                    light3.position.set(-4, 2, 4);
+                    light3.castShadow = true;
+                    scene.add(light3);
+
+                    light4 = new THREE.PointLight(0xffb900);
+                    light4.position.set(4, 2, -4);
+                    light4.castShadow = true;
+                    scene.add(light4);
+                }
+                else if (lightFlag == 5) {
+                    removeLighting();
+                }
+            }
+
+            //Simply resets the lighting system, leaving the plane blank
+            function removeLighting() {
+                scene.remove(light);
+                scene.remove(light1);
+                scene.remove(light2);
+                scene.remove(light3);
+                scene.remove(light4);
+            }
+            //Handle keyboard presses.
+            function handleKeyDown(event)
+            {
+                switch (event.keyCode) {
+                    // Render modes.
+                    case 70: //f = face
+                    scene.remove(cube);
+                    geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+                    material = new THREE.MeshPhongMaterial({ color: 0x0099ff });
+                    cube = new THREE.Mesh(geometry, material);
+                    cube.castShadow = true;
+				    cube.receiveShadow = false;
+                    scene.add(cube);
+                    //isCubeVisible = false;
+                    break;
+
+                    case 71: // g = transparent mode
+                        scene.remove(cube);
+                        bunny.remove(vertexBunny);
+                        bunny.remove(edgeBunny);
+                        bunny.remove(faceBunny);
+                        geometry = cubeShape;
+                        material = new THREE.MeshBasicMaterial({ color: 0x0099ff });
+                        material.transparent = true;
+                        material.opacity = 0.25;
+                        if(isCubeVisible == true) {
+                            material.visible = true;
+                        }
+                        cube = new THREE.Mesh(geometry, material);
+                        cube.castShadow = true;
+				        cube.receiveShadow = false;
+
+                        bunny.geometry = defaultBunny;
+                        bunnyMaterial = new THREE.MeshPhongMaterial({ color: 0x0099ff});
+                        faceBunny = new THREE.Mesh(bunny.geometry, bunnyMaterial);
+                        bunny.add(faceBunny);
+                        bunny.castShadow = true;
+                        bunny.receiveShadow = false;
+
+                        scene.add(cube);
+                        if(isBunnyVisible == true) {
+                            cube.add(bunny);
+                        }
+                        break;   
+
+                    case 69: // e = edge
+                        scene.remove(cube);
+                        bunny.remove(vertexBunny);
+                        bunny.remove(faceBunny);
+                        bunny.remove(edgeBunny);
+                        geometry = new THREE.EdgesGeometry(cubeShape);
+                        material = new THREE.LineBasicMaterial({ color: 0xff0000, lineWidth: 2 });
+                        cube = new THREE.LineSegments(geometry, material);
+                        cube.castShadow = true;
+                        cube.receiveShadow = false;
+                        
+                        bunny.geometry = new THREE.WireframeGeometry(bunny.geometry);
+                        bunnyMaterial = new THREE.LineBasicMaterial({color: 0xff0000, lineWidth: 0.2});
+                        edgeBunny = new THREE.LineSegments(bunny.geometry, bunnyMaterial);
+                        bunny.add(edgeBunny);
+                        bunny.castShadow = true;
+                        bunny.receiveShadow = false;
+                        scene.add(cube);
+
+                        if (isBunnyVisible == true) {
+                            cube.add(bunny);
+                        }
+                        break;
+
+                    case 86: // v = vertex                       
+                        scene.remove(cube);
+                        bunny.remove(edgeBunny);
+                        bunny.remove(faceBunny);
+                        bunny.remove(vertexBunny);
+                        material = new THREE.PointsMaterial({ color: 0x00ff00, size: 0.2 });
+                        if(isCubeVisible == true) {
+                            material.visible = true;
+                        }
+                        cube = new THREE.Points(geometry, material);
+                        cube.receiveShadow = false;
+
+                        bunny.wireframe = false;
+                        bunnyMaterial = new THREE.PointsMaterial({ color: 0x00ff00, size: 0.0002 });
+                        bunny.material.transparent = true;
+                        bunny.material.opacity = 0;
+                        vertexBunny = new THREE.Points(bunny.geometry, bunnyMaterial);
+                        bunny.add(vertexBunny);
+
+                        scene.add(cube);
+                        if (isBunnyVisible == true) {
+                            cube.add(bunny);
+                        }
+                        break;                        
+
+
+                    case 66: //b = toggle bunny visibility
+                    if(isBunnyVisible == true) {
+                    cube.remove(bunny);
+                    isBunnyVisible = false;
+                    }
+                    else {
+                    cube.add(bunny);
+                    isBunnyVisible = true;
+                    }
+                    break; 
+
+                    case 67: //c = toggle cube visibility
+                    //This is available for all modes but texture
+                    if(isCubeVisible == true) {
+                    material.visible = false;
+                    isCubeVisible = false;
+                    }
+                    else {
+                    material.visible = true;
+                    isCubeVisible = true;
+                    }
+                    break; 
+
+                    case 84: //t = texture
+                    scene.remove(cube);
+                    var materials = [];
+                    var textures = [];
+                    var loader;
+
+                    for (var i = 0; i < 6; i++) {
+                        loader = new THREE.TextureLoader();
+                        textures[i] = loader.load("side" + (i + 1) + ".png");
+                        materials[i] = new THREE.MeshPhongMaterial({ map: textures[i], color: 0xffffff, side: THREE.DoubleSide });
+                    }
+
+                    cube = new THREE.Mesh(cubeShape, materials);          
+                    cube.castShadow = true;
+				    cube.receiveShadow = false;
+                    scene.add(cube);
+                    break;
+                    
+                    //Lighting system
+                    case 49: //1 = activate blue light
+                        lightFlag = 0;
+                        addLighting();
+                        break;
+
+                    case 50: //2 = activate magenta light
+                        lightFlag = 1;
+                        addLighting();
+                        break;
+
+                    case 51: //3 = activate green light
+                        lightFlag = 2;
+                        addLighting();
+                        break;
+
+                    case 52: //4 = activate gold light
+                        lightFlag = 3;
+                        addLighting();
+                        break;
+
+                    case 53: //5 = activate all lights
+                        lightFlag = 4;
+                        addLighting();
+                        break;
+
+                    case 27: //Esc = reset lights
+                        lightFlag = 5;
+                        addLighting();
+                        break;
+
+                    //Cube rotations
+                    case 88: //x = toggle rotation on x-axis
+                        if (xflag == 0) {
+                            xflag = 1;
+                            animate();
+                        }
+                        else if(xflag == 1) {
+                            xflag = 0;
+                            animate();
+                        }
+                        break;
+
+                    case 89: //y = toggle rotation on y-axis
+                        if (yflag == 0) {
+                            yflag = 1;
+                            animate();
+                        }
+                        else if(yflag == 1) {
+                            yflag = 0;
+                            animate();
+                        }
+                        break;
+
+                    case 90: //z = toggle rotation on z-axis
+                        if (zflag == 0) {
+                            zflag = 1;
+                            rotateZ();
+                        }
+                        else if(zflag == 1) {
+                            zflag = 0;
+                            rotateZ();
+                        }
+                        break;
+
+                    //Camera orbits
+					case 65: // a = left orbit
+                       orbitX.rotateY(-orbitDelta);
+				       break;
+
+					case 68: // d = right orbit
+						orbitX.rotateY(orbitDelta);
+						break;
+
+					case 87: // w = upward orbit
+						orbitY.rotateX(-orbitDelta);
+						break;
+
+					case 83: // s = downwards orbit
+						orbitY.rotateX(orbitDelta);
+						break;
+
+                    //Camera translations
+                    case 37: //left arrow = translate left
+                        orbitX.translateX(-translateDelta);
+                        break;
+
+                    case 39: //right arrow = translate right
+                        orbitX.translateX(translateDelta);
+                        break;
+
+                    case 38: //up arrow = translate up
+                        orbitX.translateY(translateDelta);
+                        break;
+
+                    case 40: //down arrow = translate down
+                        orbitX.translateY(-translateDelta);
+                        break;
+
+                    case 13: //enter = zoom in
+                        camera.translateZ(-translateDelta);
+                        break;
+
+                    case 8: //backspace = zoom out
+                        camera.translateZ(translateDelta);
+                        break;
+
+                }
+            }
+            
+        </script>
+	</body>
+</html>
