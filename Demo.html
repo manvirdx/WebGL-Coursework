@@ -289,7 +289,7 @@
             }
 
             function addFloor() {
-                var floorGeometry = new THREE.PlaneGeometry(10, 10);
+                var floorGeometry = new THREE.PlaneGeometry(20, 20);
                 var floorMaterial = new THREE.MeshStandardMaterial({color: 0x8c8c8c, side: THREE.DoubleSide});
                 var floorMesh = new THREE.Mesh(floorGeometry, floorMaterial);
                 floorMesh.receiveShadow = true;
