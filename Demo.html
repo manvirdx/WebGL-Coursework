@@ -57,7 +57,8 @@
             cube, geometry, isRotating, faceCube, edgeCube, vertexCube, textureCube, cubeAllMeshes, 
             renderMode, faceMaterial, faceColour, spotlightColour,
             bunnyMesh, bunnyGeometry, bunnyIsRotating, faceBunny, edgeBunny, vertexBunny, bunnyAllMeshes, 
-            toggleCube, toggleBunny, lightPivot, toggleLight, spotLight;
+            toggleCube, toggleBunny, lightPivot, toggleLight, spotLight,
+            xRotateCube,yRotateCube,zRotateCube,xRotateBunny,yRotateBunny,zRotateBunny;
 
             //Variables for camera points
             var orbitX, orbitY;
@@ -67,7 +68,7 @@
             var orbitDelta = 0.1;
 
             // Initialise the scene, and draw it for the first time.
-            var boxSize = 2
+            var boxSize = 2;
             var cubeShape = new THREE.BoxGeometry(boxSize, boxSize, boxSize);
             init();
 			animate();
@@ -312,17 +313,14 @@
             {
 				requestAnimationFrame(animate);
 
-                // Requirement 3
                 if (isRotating) {
                     rotateCube();
                 }
-                // Requirement 9
-                if (bunnyIsRotating){
-                    rotateBunny();
+                 if (bunnyIsRotating){
+                     rotateBunny();
                 }
                 
                 lightPivot.rotateY(0.01);                
-                // Render the current scene to the screen.
 				renderer.render(scene, camera);
 			}
 
@@ -390,14 +388,14 @@
                         }
                         break;
 
-                    // Requirement 3 starting and pausing
                     case 82: // r = rotate cube
                         isRotating = !isRotating;
                         break;
 
-                    case 81: // e = rotate bunny
+                    case 81: // q = rotate bunny
                         bunnyIsRotating = !bunnyIsRotating;
                         break;
+
 
                     // Requirement 5
                     case 38: //up arrow = translate up
