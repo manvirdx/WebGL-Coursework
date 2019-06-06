@@ -1,14 +1,51 @@
-﻿<html>
+    <html>
 	<head>
 		<title>CM20219 – Coursework 2 – WebGL</title>
         <meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-		<style>
+        <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+        <style>
 			body { margin: 0; overflow: hidden; }
 			canvas { width: 100%; height: 100%; }
-		</style>
+        </style>
+        <style>
+                .dropbtn { background-color: #ffffff; color: blue; padding: 8px; font-size: 12px; border: none; cursor: pointer; }
+                .dropbtn:hover, .dropbtn:focus { background-color: #ffffff; }
+                .dropdown { float: right; position: relative; display: inline-block; }
+                .dropdown-content { display: none; position: absolute; background-color: #f1f1f1; min-width: 160px; overflow: auto;
+                                    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); right: 0; z-index: 1; }
+                
+                .dropdown-content a { color: black; font-size: 13px; padding: 3px 16px; text-decoration: none; display: block; }
+                .dropdown a:hover {background-color: #ddd;}
+                .show {display: block;}
+                </style>
 	</head>
 	<body>
+            <div class="dropdown">
+                    <button onclick="manageDropdown()" class="dropbtn">Controls ▼</button>
+                        <div id="myDropdown" class="dropdown-content">
+                            <a href="#cube"><strong>Cube</strong></a>
+                            <a href="#facecube">F - Face</a>
+                            <a href="#edgecube">E - Edges</a>
+                            <a href="#vertexcube">V - Vertices</a>
+                            <a href="#texturecube">T - Texture</a>
+                            <a href="#bunny"><strong>Bunny</strong></a>
+                            <a href="#facebunny">F - Face</a>
+                            <a href="#edgebunny">E - Edges</a>
+                            <a href="#vertexbunny">V - Vertices</a>
+                            <a href="#cameratranslate"><strong>Camera Translation</strong></a>
+                            <a href="#translateup">Up  - Translate Up</a>
+                            <a href="#translateleft">Left - Translate Left</a>
+                            <a href="#translatedown">Down - Translate Down</a>
+                            <a href="#translateright">Right - Translate Right</a>
+                            <a href="zoomin">Enter - Zoom In</a>
+                            <a href="zoomout">Backspace - Zoom Out</a>
+                            <a href="#cameraorbit"><strong>Camera Orbit</strong></a>
+                            <a href="#orbitup">Up  - Orbit Up</a>
+                            <a href="#orbitleft">Left - Orbit Left</a>
+                            <a href="#orbitdown">Down - Orbit Down</a>
+                            <a href="#orbitright">Right - Orbit Right</a>
+                        </div>
+                </div>
         <script src="three.js"></script>
         <script src="OBJLoader.js"></script>
         <script>
@@ -16,7 +53,7 @@
 
             // Global variables that are available in all functions.
             // Note: You can add your own here, e.g. to store the rendering mode.
-            var camera, scene, renderer, cameraPivot, cameraX, cameraY,
+            var camera, scene, renderer, cameraPivot,
             cube, geometry, isRotating, faceCube, edgeCube, vertexCube, textureCube, cubeAllMeshes, 
             renderMode, faceMaterial, faceColour, spotlightColour,
             bunnyMesh, bunnyGeometry, bunnyIsRotating, faceBunny, edgeBunny, vertexBunny, bunnyAllMeshes, 
@@ -196,15 +233,13 @@
                     function ( object ) {
                         object.traverse(
                             function (child) {
-
                                 if (child instanceof THREE.Mesh) {
                                     child.geometry.removeAttribute("normal");
-                                    //in case obj comes in more than one parts
+                                    //Allows smoothing of the object
                                     bunnyGeometry.merge(new THREE.Geometry().fromBufferGeometry( child.geometry ));
                                     bunnyGeometry.mergeVertices();
                                     bunnyGeometry.computeFaceNormals();
                                     bunnyGeometry.computeVertexNormals(true);
-
                                 }
                             }
                         );
@@ -229,7 +264,6 @@
                 bunnyGeometry.scale(1/ratio,1/ratio,1/ratio);
             }
 
-            // Requirement 9
             function defineBunnyMeshes() {
                 var mat = new THREE.MeshPhongMaterial( { color: 0x0099ff, specular: 0x555555, shininess: 30 } );
                 faceBunny = new THREE.Mesh(bunnyGeometry,mat);
@@ -292,26 +326,10 @@
 				renderer.render(scene, camera);
 			}
 
-            function buildGui() {
-				gui = new dat.GUI();
-				var params = {
-					'light color': spotLight.color.getHex(),
-				};
-				gui.addColor( params, 'light color' ).onChange( function ( val ) {
-					spotLight.color.setHex( val );
-					render();
-				} );
-                gui.open();
-            }
-
-
             // Handle keyboard presses.
-            function handleKeyDown(event)
-            {
-                switch (event.keyCode)
-                {
+            function handleKeyDown(event) {
+                switch (event.keyCode) {
                     // Render modes.
-                    // Requirement 4
                     case 70: // f = face
                         if (renderMode!="faces"){
                             renderMode="faces";
@@ -453,9 +471,27 @@
                         }
                         break;
                 }
+            }
 
-                
+            /* When the user clicks on the button, toggle between hiding and showing the dropdown content */
+            function manageDropdown() {
+                document.getElementById("myDropdown").classList.toggle("show");
+            }
+
+            // Close the dropdown if the user clicks outside of it
+            window.onclick = function(event) {
+            if (!event.target.matches('.dropbtn')) {
+                var dropdowns = document.getElementsByClassName("dropdown-content");
+                var i;
+                    for (i = 0; i < dropdowns.length; i++) {
+                        var dropList = dropdowns[i];
+                        if (dropList.classList.contains('show')) {
+                            dropList.classList.remove('show');
+                        }
+                    }
+                }
             }
         </script>
+        
 	</body>
 </html>
